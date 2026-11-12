@@ -38,6 +38,9 @@ src/*.o
 src/*.so
 src/*.dll
 
+# --- Claude Code (personliga inställningar) ---
+.claude/settings.local.json
+
 # --- Övrigt ---
 po/*~
 rsconnect/
