@@ -17,7 +17,8 @@
 #' * [vg_kommuner] – Västra Götalands 49 kommuner som `sf`-objekt, för exempel
 #'   och översiktskartor
 #' * [func_gis_hamta_con()] och [func_gis_hamta_geoobjekt()] – geodata från VGR:s PostGIS
-#' * [func_gis_satt_inloggning()] – behövs inte längre (inloggningen är inbyggd)
+#' * [func_gis_satt_inloggning()] – sparar inloggningen till geodatabasen i Windows
+#'   Autentiseringshanteraren
 #'
 #' @section Data och uppslag:
 #' * [func_hamta_dim_region()] – regionindelningar

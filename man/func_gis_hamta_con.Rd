@@ -11,7 +11,8 @@ func_gis_hamta_pgstring(med_losenord = TRUE)
 }
 \arguments{
 \item{med_losenord}{\code{TRUE} (standard) tar med lösenordet i strängen, så att
-den kan användas direkt i \code{\link[sf:st_read]{sf::st_read()}}. \code{FALSE} utelämnar det.}
+den kan användas direkt i \code{\link[sf:st_read]{sf::st_read()}}. \code{FALSE} utelämnar det. Skriv inte
+ut en sträng med lösenordet, och spara den inte i en fil.}
 }
 \value{
 \code{func_gis_hamta_con()}: ett DBI-anslutningsobjekt. Stäng det med
@@ -31,9 +32,15 @@ trunkerar inte kolumnnamn. Enklast är att hämta tabeller med
 }
 \section{Inloggning}{
 
-Användarnamn och lösenord är inbyggda i paketet, så ingen inloggning behöver
-sparas. Servern nås bara inifrån VGR:s nätverk. Uppgifterna används bara mot
-\code{geodata.vgregion.se}; värd, port och databas går inte att ändra.
+Användarnamn och lösenord läses ur Windows Autentiseringshanteraren
+(Credential Manager), där de sparas under tjänsten \code{geodata.vgregion.se}.
+Första gången, när inga uppgifter finns sparade, frågar funktionen efter
+användarnamn och lösenord och sparar dem där. Det går bara i en interaktiv
+R-session; i ett skript som körs med \code{Rscript} stoppar funktionen i stället.
+Uppgifterna kan bytas med \code{\link[=func_gis_satt_inloggning]{func_gis_satt_inloggning()}}.
+
+Servern nås bara inifrån VGR:s nätverk. Värd, port och databas går inte att
+ändra, så att lösenordet bara skickas till \code{geodata.vgregion.se}.
 }
 
 \examples{
@@ -44,7 +51,12 @@ nar_servern <- tryCatch({
   TRUE
 }, error = function(e) FALSE)
 
-if (nar_servern) {
+# Kräver inloggning: i en interaktiv session frågar paketet efter uppgifterna första
+# gången, annars måste de redan vara sparade i Windows Autentiseringshanteraren
+har_inloggning <- interactive() ||
+  tryCatch(nrow(keyring::key_list("geodata.vgregion.se")) > 0, error = function(e) FALSE)
+
+if (nar_servern && har_inloggning) {
   # Anslutningen används med DBI, och stängs när man är klar
   con <- func_gis_hamta_con()
   print(DBI::dbGetQuery(con, "SELECT count(*) FROM geometry_columns"))
@@ -57,5 +69,5 @@ if (nar_servern) {
 }
 }
 \seealso{
-\code{\link[=func_gis_hamta_geoobjekt]{func_gis_hamta_geoobjekt()}}
+\code{\link[=func_gis_hamta_geoobjekt]{func_gis_hamta_geoobjekt()}}, \code{\link[=func_gis_satt_inloggning]{func_gis_satt_inloggning()}}
 }

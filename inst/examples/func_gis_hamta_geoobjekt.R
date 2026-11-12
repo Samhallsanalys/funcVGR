@@ -5,7 +5,12 @@ nar_servern <- tryCatch({
   TRUE
 }, error = function(e) FALSE)
 
-if (nar_servern) {
+# Kräver inloggning: i en interaktiv session frågar paketet efter uppgifterna första
+# gången, annars måste de redan vara sparade i Windows Autentiseringshanteraren
+har_inloggning <- interactive() ||
+  tryCatch(nrow(keyring::key_list("geodata.vgregion.se")) > 0, error = function(e) FALSE)
+
+if (nar_servern && har_inloggning) {
   # Lista tillgängliga tabeller
   tabeller <- func_gis_hamta_geoobjekt()
   print(head(tabeller))

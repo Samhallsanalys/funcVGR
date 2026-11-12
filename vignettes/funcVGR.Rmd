@@ -195,11 +195,13 @@ lager. För nya kartor rekommenderas `func_graf_karta_heatmap()`.
 ### Data från VGR:s geodatabas
 
 Riktiga kommun- och länsgränser hämtas från VGR:s PostGIS-databas med
-`func_gis_hamta_geoobjekt()`. Inloggningen är inbyggd i paketet, så det enda som
-krävs är VGR:s nätverk. För egna SQL-frågor ger `func_gis_hamta_con()` en
-DBI-anslutning och `func_gis_hamta_pgstring()` motsvarande anslutningssträng för
-`sf::st_read()`. `func_gis_satt_inloggning()`, som tidigare sparade
-inloggningsuppgifter, behövs inte längre men finns kvar för äldre skript. Koden
+`func_gis_hamta_geoobjekt()`. Det kräver VGR:s nätverk och ett användarnamn och
+lösenord, som sparas i Windows Autentiseringshanteraren. Första gången frågar
+paketet efter dem och sparar dem där, så de behöver bara anges en gång per dator.
+För egna SQL-frågor ger `func_gis_hamta_con()` en DBI-anslutning och
+`func_gis_hamta_pgstring()` motsvarande anslutningssträng för `sf::st_read()`.
+`func_gis_satt_inloggning()` sparar eller byter uppgifterna, t.ex. efter ett nytt
+lösenord eller innan skript körs med `Rscript`, där paketet inte kan fråga. Koden
 nedan körs inte när vignetten byggs.
 
 ```{r, eval = FALSE, code = exempel("func_gis_hamta_geoobjekt")}
@@ -306,7 +308,7 @@ RStudio. Den fungerar bara i RStudio och gör därför ingenting här.
 | `func_graf_karta_change()` | Karta över förändring mellan första och sista året | `df`, `df_value`, `basemap`, `geom_col` |
 | `func_graf_karta_heatmap()`, `graf_karta_heatmap()` | Heatmap (täthetskarta) över punktdata | `df`, `df_value`, `basemap` |
 | `func_graf_heatmap_coordinats()` | Enkel heatmap över punktkoordinater (äldre variant) | `df`, `df_varde`, `basemap` |
-| `func_gis_satt_inloggning()` | Behövs inte längre: inloggningen är inbyggd | – |
+| `func_gis_satt_inloggning()` | Spara inloggningsuppgifter till geodatabasen | – |
 | `func_gis_hamta_geoobjekt()` | Hämta geografiska objekt från VGR:s PostGIS-databas | – |
 | `func_gis_hamta_con()`, `func_gis_hamta_pgstring()` | Anslutning till VGR:s geodatabas (PostGIS) | – |
 | `func_graf_tabell()` | Formaterad tabell som bild eller flextable | `df` |

@@ -2,36 +2,45 @@
 % Please edit documentation in R/func_gis_hamta_con.R
 \name{func_gis_satt_inloggning}
 \alias{func_gis_satt_inloggning}
-\title{Spara inloggningsuppgifter till geodatabasen (behövs inte längre)}
+\title{Spara inloggningsuppgifter till geodatabasen}
 \usage{
-func_gis_satt_inloggning(
-  anvandare = NULL,
-  metod = c("renviron", "keyring"),
-  testa = TRUE
-)
+func_gis_satt_inloggning(anvandare = NULL, metod = NULL, testa = TRUE)
 }
 \arguments{
-\item{anvandare}{Används inte längre.}
+\item{anvandare}{Användarnamn som text. \code{NULL} (standard) frågar efter det.}
 
-\item{metod}{Används inte längre.}
+\item{metod}{Används inte längre. Uppgifterna sparas alltid i Windows
+Autentiseringshanteraren. Finns kvar så att äldre skript fungerar.}
 
-\item{testa}{Används inte längre.}
+\item{testa}{\code{TRUE} (standard) provar att ansluta med de nya uppgifterna och
+säger om det gick.}
 }
 \value{
-\code{NULL}, osynligt.
+Användarnamnet, osynligt.
 }
 \description{
-Sedan version 0.1.6 är inloggningen till geodatabasen inbyggd i paketet (se
-\code{\link[=func_gis_hamta_con]{func_gis_hamta_con()}}), så funktionen sparar ingenting. Den finns kvar så
-att äldre skript som anropar den fortsätter att fungera, och skriver bara
-ut ett meddelande. Uppgifter som sparats tidigare (\code{GEODATA_USER} och
-\code{GEODATA_PASSWORD} i \code{.Renviron}, eller i Windows Autentiseringshanteraren)
-används inte längre och kan tas bort.
+Frågar efter användarnamn och lösenord till VGR:s geodatabas
+(\code{geodata.vgregion.se}) och sparar dem i Windows Autentiseringshanteraren
+(Credential Manager) under tjänsten \code{geodata.vgregion.se}. Där läser
+\code{\link[=func_gis_hamta_con]{func_gis_hamta_con()}}, \code{\link[=func_gis_hamta_pgstring]{func_gis_hamta_pgstring()}} och
+\code{\link[=func_gis_hamta_geoobjekt]{func_gis_hamta_geoobjekt()}} dem sedan, så att de bara behöver anges en gång
+per dator.
+}
+\details{
+Funktionen behöver bara anropas för att byta uppgifter, t.ex. efter ett nytt
+lösenord: saknas uppgifter frågar anslutningsfunktionerna själva efter dem.
+Tidigare sparade uppgifter för tjänsten tas bort, så att bara en användare
+finns sparad. Lösenordet anges i en dialogruta och syns aldrig i konsolen.
+Funktionen kräver en interaktiv R-session.
 }
 \examples{
-# Inloggningen är inbyggd i paketet, så funktionen behövs inte längre. Den finns kvar för
-# äldre skript och skriver bara ut ett meddelande
-func_gis_satt_inloggning()
+# Frågar efter användarnamn och lösenord och sparar dem i Windows
+# Autentiseringshanteraren. Funktionen kräver en interaktiv session, så exemplet
+# körs inte i R CMD check. Den behövs bara för att byta uppgifter: första gången
+# frågar func_gis_hamta_con() själv efter dem.
+if (interactive()) {
+  func_gis_satt_inloggning()
+}
 }
 \seealso{
 \code{\link[=func_gis_hamta_con]{func_gis_hamta_con()}}

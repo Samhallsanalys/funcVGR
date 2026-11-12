@@ -38,8 +38,10 @@ PostgreSQL-drivrutin, med samma inloggningsuppgifter. En anslutning som
 anroparen skickar in lämnas öppen. Då hämtas data via DBI, vilket kan
 trunkera kolumnnamn till 10 tecken.
 
-Inloggningen är inbyggd i paketet (se \code{\link[=func_gis_hamta_con]{func_gis_hamta_con()}}). Det som
-krävs är att datorn är ansluten till VGR:s nätverk.
+Användarnamn och lösenord läses ur Windows Autentiseringshanteraren. Finns
+inga sparade frågar funktionen efter dem första gången (se avsnittet
+Inloggning i \code{\link[=func_gis_hamta_con]{func_gis_hamta_con()}}). Datorn måste vara ansluten till VGR:s
+nätverk.
 }
 \examples{
 # Kräver VGR:s nätverk: exemplet körs bara om geodata.vgregion.se går att nå
@@ -49,7 +51,12 @@ nar_servern <- tryCatch({
   TRUE
 }, error = function(e) FALSE)
 
-if (nar_servern) {
+# Kräver inloggning: i en interaktiv session frågar paketet efter uppgifterna första
+# gången, annars måste de redan vara sparade i Windows Autentiseringshanteraren
+har_inloggning <- interactive() ||
+  tryCatch(nrow(keyring::key_list("geodata.vgregion.se")) > 0, error = function(e) FALSE)
+
+if (nar_servern && har_inloggning) {
   # Lista tillgängliga tabeller
   tabeller <- func_gis_hamta_geoobjekt()
   print(head(tabeller))

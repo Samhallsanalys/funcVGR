@@ -12,8 +12,10 @@
 #' anroparen skickar in lämnas öppen. Då hämtas data via DBI, vilket kan
 #' trunkera kolumnnamn till 10 tecken.
 #'
-#' Inloggningen är inbyggd i paketet (se [func_gis_hamta_con()]). Det som
-#' krävs är att datorn är ansluten till VGR:s nätverk.
+#' Användarnamn och lösenord läses ur Windows Autentiseringshanteraren. Finns
+#' inga sparade frågar funktionen efter dem första gången (se avsnittet
+#' Inloggning i [func_gis_hamta_con()]). Datorn måste vara ansluten till VGR:s
+#' nätverk.
 #'
 #' @param con DBI-anslutning. Standard är en ny anslutning från
 #'   [func_gis_hamta_con()].
@@ -96,9 +98,9 @@ func_gis_hamta_geoobjekt <- function(
 
   if (con_skapad_internt) {
     # Vanliga fallet: con skapades internt av func_gis_hamta_con(), så vi vet exakt
-    # vilka credentials som gäller och kan gå via den snabba, native PG-anslutningen
-    # (samma källa till sanning som DBI-anslutningen ovan – se gis_inloggning() i
-    # func_gis_hamta_con.R).
+    # vilka uppgifter som gäller och kan gå via den snabba, native PG-anslutningen.
+    # gis_st_read() läser samma uppgifter ur Windows Autentiseringshanteraren som
+    # DBI-anslutningen ovan (se gis_inloggning() i func_gis_hamta_con.R).
     spatial_data <- gis_st_read(paste("SELECT * FROM", qualified))
   } else {
     # Anroparen har skickat in en egen anslutning. Vi kan inte säkert läsa ut lösenordet

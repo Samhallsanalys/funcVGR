@@ -29,7 +29,8 @@ katalogen \code{func_vgr}. Funktionerna är grupperade enligt nedan.
 \item \link{vg_kommuner} – Västra Götalands 49 kommuner som \code{sf}-objekt, för exempel
 och översiktskartor
 \item \code{\link[=func_gis_hamta_con]{func_gis_hamta_con()}} och \code{\link[=func_gis_hamta_geoobjekt]{func_gis_hamta_geoobjekt()}} – geodata från VGR:s PostGIS
-\item \code{\link[=func_gis_satt_inloggning]{func_gis_satt_inloggning()}} – behövs inte längre (inloggningen är inbyggd)
+\item \code{\link[=func_gis_satt_inloggning]{func_gis_satt_inloggning()}} – sparar inloggningen till geodatabasen i Windows
+Autentiseringshanteraren
 }
 }
 

@@ -66,13 +66,24 @@ Verdana används där också.
 
 ### Inloggning till geodatabasen
 
-Inloggningen till VGR:s geodatabas (`geodata.vgregion.se`) är inbyggd i paketet,
-så ingenting behöver sparas. Det som krävs är att datorn är ansluten till VGR:s
-nätverk, eftersom servern bara nås inifrån.
+Användarnamn och lösenord till VGR:s geodatabas (`geodata.vgregion.se`) sparas
+i Windows Autentiseringshanteraren (Credential Manager) med paketet keyring, under
+tjänsten `geodata.vgregion.se`. Första gången du hämtar något från geodatabasen
+frågar paketet efter dem och sparar dem där, så de behöver bara anges en gång per
+dator. Lösenordet anges i en dialogruta och syns aldrig i konsolen eller i koden.
 
-Har du tidigare sparat inloggningsuppgifter med `func_gis_satt_inloggning()`
-används de inte längre. Raderna `GEODATA_USER` och `GEODATA_PASSWORD` kan tas bort
-ur `.Renviron` (öppna filen med `usethis::edit_r_environ()`).
+Det kräver en interaktiv R-session, t.ex. RStudio. Ska skript köras med `Rscript`
+eller schemalagt, spara uppgifterna först i RStudio:
+
+```r
+func_gis_satt_inloggning()
+```
+
+Samma funktion byter uppgifterna, t.ex. efter ett nytt lösenord. Datorn måste
+också vara ansluten till VGR:s nätverk, eftersom servern bara nås inifrån.
+
+Raderna `GEODATA_USER` och `GEODATA_PASSWORD` i `.Renviron` används inte och kan
+tas bort (öppna filen med `usethis::edit_r_environ()`).
 
 ### Uppdatera
 
@@ -431,7 +442,7 @@ Parametrar som inte står under "Obligatoriska parametrar" har standardvärden.
 | `func_graf_karta_heatmap()` | Heatmap (täthetskarta) över punktdata | `df`, `df_value`, `basemap` |
 | `func_graf_heatmap_coordinats()` | Enkel heatmap över punktkoordinater (äldre variant) | `df`, `df_varde`, `basemap` |
 | **Geodata** | | |
-| `func_gis_satt_inloggning()` | Behövs inte längre: inloggningen är inbyggd (finns kvar för äldre skript) | – |
+| `func_gis_satt_inloggning()` | Spara inloggningsuppgifter till geodatabasen i Windows Autentiseringshanteraren | – |
 | `func_gis_hamta_geoobjekt()` | Hämta geografiska objekt från VGR:s PostGIS-databas | – |
 | `func_gis_hamta_con()`, `func_gis_hamta_pgstring()` | Anslutning till VGR:s geodatabas (PostGIS) | – |
 | **Uppslag** | | |
@@ -461,8 +472,10 @@ Ta bort `source()`-anropen till `func_vgr` (t.ex. `func_all.R`) och lägg till
 - Paketen laddas inte längre med `pacman::p_load()`. Använder ditt eget skript
   t.ex. dplyr eller ggplot2 direkt behöver du ladda dem själv med `library()`.
 - Typsnitt hanteras med systemfonts i stället för showtext.
-- Inloggningen till geodatabasen är inbyggd, som i skripten. Värd, port och
-  databas går inte att ändra.
+- Inloggningsuppgifterna till geodatabasen står inte i koden, som i skripten,
+  utan sparas i Windows Autentiseringshanteraren. Paketet frågar efter dem
+  första gången (se [Inloggning till geodatabasen](#inloggning-till-geodatabasen)).
+  Värd, port och databas går inte att ändra.
 - SKR-kolumnerna i `func_hamta_dim_region()` är rättade och följer SKR:s
   kommungruppsindelning 2023.
 - `region_kod_prefix` i `func_hamta_dim_region()` tar nu även flera prefix,
@@ -471,6 +484,28 @@ Ta bort `source()`-anropen till `func_vgr` (t.ex. `func_all.R`) och lägg till
 ## Versionshistorik
 
 Samma historik finns i NEWS.md och visas i R med `news(package = "funcVGR")`.
+
+### 0.4.0 (2026-11-12)
+
+#### Ändrat
+
+* **Inloggningen till geodatabasen sparas i Windows Autentiseringshanteraren.**
+  Användarnamn och lösenord är inte längre inbyggda i paketet.
+  `func_gis_hamta_con()`, `func_gis_hamta_pgstring()` och
+  `func_gis_hamta_geoobjekt()` läser dem med keyring under tjänsten
+  `geodata.vgregion.se`. Finns inga sparade frågar de efter dem första gången och
+  sparar dem. **Bakåtinkompatibelt:** skript som körs med `Rscript` eller
+  schemalagt stoppar tills uppgifterna har sparats en gång i en interaktiv
+  session, t.ex. med `func_gis_satt_inloggning()` i RStudio.
+* `func_gis_satt_inloggning()` sparar uppgifterna igen: den frågar efter
+  användarnamn (om `anvandare` inte anges) och lösenord, ersätter tidigare
+  sparade uppgifter och provar anslutningen (`testa = TRUE`). Den returnerar
+  användarnamnet osynligt. `metod` används inte.
+* `func_gis_hamta_con()` säger att användarnamnet eller lösenordet inte godtogs,
+  och hänvisar till `func_gis_satt_inloggning()`, när servern nekar inloggningen.
+* `func_gis_hamta_geoobjekt()` lämnar lösenordet till GDAL via `PGPASSWORD` i
+  stället för i anslutningssträngen.
+* Paketet keyring är ett nytt beroende.
 
 ### 0.3.0 (2026-10-21)
 
@@ -586,7 +621,7 @@ Samma historik finns i NEWS.md och visas i R med `news(package = "funcVGR")`.
 
 * **Inloggningen till geodatabasen är inbyggd.** `func_gis_hamta_con()`,
   `func_gis_hamta_pgstring()` och `func_gis_hamta_geoobjekt()` ansluter till
-  `geodata.vgregion.se` med användaren `***`, utan att något behöver sparas.
+  `geodata.vgregion.se` med en inbyggd användare, utan att något behöver sparas.
   Det som krävs är VGR:s nätverk. Inloggningsuppgifter i `.Renviron`
   (`GEODATA_USER`, `GEODATA_PASSWORD`) och i Windows Autentiseringshanteraren
   används inte längre och kan tas bort. Värd, port och databas går inte längre att

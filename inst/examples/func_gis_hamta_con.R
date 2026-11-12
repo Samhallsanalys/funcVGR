@@ -5,7 +5,12 @@ nar_servern <- tryCatch({
   TRUE
 }, error = function(e) FALSE)
 
-if (nar_servern) {
+# Kräver inloggning: i en interaktiv session frågar paketet efter uppgifterna första
+# gången, annars måste de redan vara sparade i Windows Autentiseringshanteraren
+har_inloggning <- interactive() ||
+  tryCatch(nrow(keyring::key_list("geodata.vgregion.se")) > 0, error = function(e) FALSE)
+
+if (nar_servern && har_inloggning) {
   # Anslutningen används med DBI, och stängs när man är klar
   con <- func_gis_hamta_con()
   print(DBI::dbGetQuery(con, "SELECT count(*) FROM geometry_columns"))
