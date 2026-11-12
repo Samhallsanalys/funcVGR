@@ -10,26 +10,42 @@ Paketet ersätter de fristående skripten i `func_vgr`, som tidigare lästes in 
 
 ## Installation
 
-Kräver R 4.1 eller senare. Beroenden från CRAN installeras automatiskt.
-
-Från källkatalogen med **remotes** (rekommenderas):
+Kräver R 4.1 eller senare. Paketet installeras från GitHub med **remotes**, och
+beroenden från CRAN installeras automatiskt:
 
 ```r
 install.packages("remotes")
-remotes::install_local("H:/R/funcVGR", dependencies = TRUE, build_vignettes = TRUE)
+remotes::install_github("Samhallsanalys/funcVGR", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 `build_vignettes = TRUE` gör att vignetten (en genomgång av paketet) följer med
 installationen. Det kräver pandoc, som ingår i RStudio.
 
-Eller från kommandoraden:
+### Åtkomst till GitHub
 
-```bash
-R CMD INSTALL H:/R/funcVGR
+Repot är privat. Du behöver ett GitHub-konto med åtkomst till organisationen
+Samhallsanalys, och R behöver en personlig åtkomsttoken (PAT) för att hämta
+paketet. Det görs en gång per dator:
+
+```r
+install.packages(c("usethis", "gitcreds"))
+usethis::create_github_token()   # öppnar GitHub: skapa en token med behörigheten "repo"
+gitcreds::gitcreds_set()         # klistra in token när R frågar
 ```
 
-Med `R CMD INSTALL` installeras inga beroenden och ingen vignette. Saknas något
-paket avbryts installationen med ett meddelande om vilket.
+Token sparas i Windows Autentiseringshanteraren via Git, så Git for Windows måste
+vara installerat. Har du redan klonat eller pushat repot med Git på datorn finns
+oftast en inloggning sparad, och då behövs inte de här stegen. Felet
+`HTTP error 404. Not Found` betyder att token saknas eller att kontot inte har
+åtkomst till repot.
+
+### Från en lokal kopia
+
+Har du källkoden på datorn, t.ex. en klon av repot, installerar du från mappen:
+
+```r
+remotes::install_local("sökväg/till/funcVGR", dependencies = TRUE, build_vignettes = TRUE)
+```
 
 ### Valfria paket
 
@@ -87,8 +103,9 @@ tas bort (öppna filen med `usethis::edit_r_environ()`).
 
 ### Uppdatera
 
-Installera om på samma sätt när källkoden har ändrats. Starta om R först om
-paketet redan är laddat.
+Kör `remotes::install_github()` igen med samma argument. Den installerar bara
+om det finns en ny commit på GitHub; `force = TRUE` installerar om ändå. Starta
+om R först om paketet redan är laddat.
 
 ## Kom igång
 
