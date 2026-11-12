@@ -1,0 +1,330 @@
+---
+title: "Kom igång med funcVGR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Kom igång med funcVGR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.2,
+  dpi = 96,
+  message = FALSE,
+  # ragg använder datorns installerade typsnitt (via systemfonts), så diagrammen får Verdana
+  dev = if (requireNamespace("ragg", quietly = TRUE)) "ragg_png" else "png"
+)
+
+# Läser exempelkoden från inst/examples, så att vignetten alltid visar samma exempel
+# som hjälpsidorna
+exempel <- function(fn) {
+  fil <- file.path("..", "inst", "examples", paste0(fn, ".R"))
+  if (!file.exists(fil)) fil <- system.file("examples", paste0(fn, ".R"), package = "funcVGR")
+  readLines(fil, encoding = "UTF-8")
+}
+```
+
+funcVGR samlar de funktioner som Samhällsanalys i Västra Götalandsregionen använder
+för att ta fram diagram, kartor, tabeller och presentationer i VGR:s grafiska
+profil, tillsammans med uppslagstabeller och hjälpfunktioner för data från SCB och
+VGR:s geodatabas.
+
+Den här vignetten går igenom ett typiskt arbetsflöde: ta fram diagram och kartor,
+samla dem i en PowerPoint-presentation och koppla på uppslagsinformation. Koden är
+densamma som i exemplen på funktionernas hjälpsidor. Alla exempel använder påhittade
+siffror och körs utan nätverk, utom avsnitten om geodatabasen och SCB, som inte körs
+när vignetten byggs.
+
+```{r}
+library(funcVGR)
+```
+
+## Diagram
+
+Diagramfunktionerna tar en data frame och kolumnnamn som text, där `df`, `x_value`
+och `y_value` är obligatoriska. De returnerar ett vanligt `ggplot`-objekt, så de kan
+byggas på med ggplot2 och sparas med `ggplot2::ggsave()`. Siffror formateras på
+svenska, med decimalkomma och mellanslag som tusentalsavgränsare.
+
+### Linjediagram
+
+`func_graf_linjediagram()` ritar en linje per grupp (`group`) och passar för
+tidsserier. Etiketter kan visas på alla punkter eller bara den första och sista. En
+grupp kan lyftas fram med `highlight_groups`, och referenslinjer markerar t.ex. ett
+trendbrott. Med `group_highlight` (kräver gghighlight) tonas övriga grupper ned i
+grått och den framhävda linjen får sitt gruppnamn som etikett i slutet, som ren text
+eller i en ruta med `group_highlight_label_box = TRUE`. Gruppfärger kan anges med namn, så att samma grupp alltid får samma färg
+oavsett ordningen i data; utan namn fördelas färgerna i gruppordning (faktornivåer,
+tal i storleksordning, annars den ordning grupperna först förekommer). `text_scale`
+förstorar all text på en gång, t.ex. inför en stor export, och `show_major_grid = "y"`
+ger bara vågräta stödlinjer. x-axeln kan också vara datum. Etiketter som inte flyttas
+isär (`data_label_repel = FALSE`) får plats vid x-axelns ändar, så att de inte klipps
+vid panelkanten; utrymmet beräknas för ett diagram på cirka 6 × 4 tum.
+
+```{r, code = exempel("func_graf_linjediagram")}
+```
+
+### Stapeldiagram
+
+`func_graf_barchart()` ritar stapeldiagram. `bar_type` styr om staplarna står
+bredvid varandra (`"grouped"`), ovanpå varandra (`"stacked"`) eller visar andelar
+(`"filled"`). För staplade staplar ger etiketter `"outside"` (standard) stapelns
+totalsumma, och `"middle"` värdet för varje del. Liggande staplar (`horizontal =
+TRUE`) passar för långa kategorinamn, och med `sort_by = "value_desc"` hamnar den
+största stapeln överst. Staplarna har en tunn svart kantlinje; `bar_line_color =
+NULL` tar bort den. Negativa värden får etiketten under stapeln, och de yttersta
+staplarnas etiketter får plats vid diagrammets kant.
+
+```{r, code = exempel("func_graf_barchart")}
+```
+
+### Dumbbell-diagram
+
+`func_graf_dumbbell()` jämför två perioder per kategori. Obligatoriska parametrar är
+`df`, `x_value`, `y_value` och `group` (perioden). Perioderna ordnas i tidsordning
+oavsett i vilken ordning raderna ligger, och har data fler än två perioder jämförs
+den första och den sista. Etiketterna hamnar på den sida om punkten som pekar bort
+från den andra punkten, så att de inte ligger på linjen. Som i linje- och
+stapeldiagrammen förstorar `text_scale` all text, `show_major_grid = "x"` eller `"y"`
+ger stödlinjer i bara en riktning, och `x_axis_line`/`y_axis_line` slår av och på
+axellinjerna.
+
+```{r, fig.height = 3.5, code = exempel("func_graf_dumbbell")}
+```
+
+### Spridningsdiagram
+
+`func_graf_spridningsdiagram()` (eller `func_graf_scatterplot()`) visar sambandet mellan
+två numeriska värden, en punkt per rad. Obligatoriska parametrar är `df`, `x_value` och
+`y_value`. Med `group` får punkterna en färg per grupp, och `point_size_column` gör ett
+bubbeldiagram där punktens yta växer med t.ex. befolkningen. `data_label_column` skriver
+namn vid punkterna (`data_label_filter` begränsar till några av dem), och `trend_line`
+lägger till en linjär trendlinje, för alla punkter eller per grupp, med ett
+konfidensband om `trend_line_se = TRUE`. Referenslinjerna `x_break_line` och
+`y_break_line` kan ligga på ett tal eller på medelvärdet (`"mean"`) eller medianen.
+
+```{r, code = exempel("func_graf_spridningsdiagram")}
+```
+
+### Histogram
+
+`func_graf_histogram()` visar fördelningen av ett numeriskt värde i lika breda
+intervall. Bara `df` och `x_value` är obligatoriska; intervallens bredd väljs
+automatiskt med jämna gränser, eller anges med `bin_width` (t.ex. 5 för femårsklasser)
+eller `bins`. `histogram_y` växlar mellan antal, andel och täthet. Med `group` staplas
+grupperna, ställs bredvid varandra eller ritas över varandra (`bar_type`), och med
+`histogram_y = "percent"` blir andelen då inom varje grupp, så att fördelningarnas form
+går att jämföra. Intervallen räknas fram i funktionen, så att `func_d3_histogram()` i
+funcVGRD3 får samma intervall.
+
+```{r, code = exempel("func_graf_histogram")}
+```
+
+### Färger och tema
+
+`func_fargtema()` ger VGR:s färgpaletter och `func_tema_vgr()` ett ggplot2-tema för
+egna diagram. Paletten `"ru_kontrast"` har sju tydligt olika färger och passar
+diagram med många grupper.
+
+```{r, code = exempel("func_fargtema")}
+```
+
+```{r, warning = FALSE, code = exempel("func_tema_vgr")}
+```
+
+Typsnittet (standard Verdana) hämtas bland datorns installerade typsnitt med
+systemfonts. I RStudio blir resultatet bäst med grafikenheten AGG från paketet
+ragg, som använder systemfonts direkt: **Tools → Global Options → General →
+Graphics → Backend: AGG**. `ggsave()` använder ragg automatiskt för PNG när
+ragg är installerat. Vid export till PDF används Helvetica med R:s vanliga
+`pdf()`-enhet. Spara med `ggsave("diagram.pdf", device = cairo_pdf)` för att få
+Verdana.
+
+## Kartor
+
+Kartfunktionerna tar `sf`-objekt. Paketet innehåller `vg_kommuner`, gränserna för
+Västra Götalands 49 kommuner i SWEREF 99 TM, som räcker för översiktskartor och
+används i exemplen. Aktuella och detaljerade gränser hämtas från VGR:s geodatabas
+(se nedan).
+
+### Koropletkarta
+
+`func_graf_karta()` färgar områdena efter ett värde. Obligatoriska parametrar är
+`df`, `basemap` och `geom_col`, samt `df_value` eller `group`. Värdena delas in i
+klasser: lika breda intervall (`"equal"`, standard), lika många områden per klass
+(`"quantile"`) eller egna gränser (`"custom"`). Med 49 kommuner blir det trångt om
+alla får etikett, så `data_label_filter` väljer ut några och `data_label_show =
+FALSE` tar bort dem helt. Med `group` färgas kommunerna efter en kategori i stället
+för en färgskala, med en färg per grupp.
+
+```{r, fig.height = 6, code = exempel("func_graf_karta")}
+```
+
+### Förändring över tid
+
+`func_graf_karta_change()` tar data med en rad per område och år och räknar ut
+förändringen mellan det första och det sista året, absolut eller i procent
+(`percentage_growth = TRUE`). Åren matchas på geometrin, så den måste vara identisk
+för alla år.
+
+```{r, fig.height = 6, code = exempel("func_graf_karta_change")}
+```
+
+### Heatmap
+
+För punktdata, t.ex. arbetsställen, visar `func_graf_karta_heatmap()` var punkterna
+ligger tätast. Förklaringen anger tätheten som antal punkter per km². Med `group`
+färgas punkterna per grupp. Funktionen kan även anropas med det äldre namnet
+`graf_karta_heatmap()`.
+
+```{r, fig.height = 5, code = exempel("func_graf_karta_heatmap")}
+```
+
+`func_graf_heatmap_coordinats()` är en äldre och enklare variant med samma
+grundidé. Den tar punkterna (`df`), en värdekolumn (`df_varde`) och en
+bakgrundskarta (`basemap`), och kan rita vägar, hav, sjöar och kommunnamn som extra
+lager. För nya kartor rekommenderas `func_graf_karta_heatmap()`.
+
+```{r, fig.height = 5, code = exempel("func_graf_heatmap_coordinats")}
+```
+
+### Data från VGR:s geodatabas
+
+Riktiga kommun- och länsgränser hämtas från VGR:s PostGIS-databas med
+`func_gis_hamta_geoobjekt()`. Inloggningen är inbyggd i paketet, så det enda som
+krävs är VGR:s nätverk. För egna SQL-frågor ger `func_gis_hamta_con()` en
+DBI-anslutning och `func_gis_hamta_pgstring()` motsvarande anslutningssträng för
+`sf::st_read()`. `func_gis_satt_inloggning()`, som tidigare sparade
+inloggningsuppgifter, behövs inte längre men finns kvar för äldre skript. Koden
+nedan körs inte när vignetten byggs.
+
+```{r, eval = FALSE, code = exempel("func_gis_hamta_geoobjekt")}
+```
+
+```{r, eval = FALSE, code = exempel("func_gis_hamta_con")}
+```
+
+## Tabeller och PowerPoint
+
+`func_graf_tabell()` gör en formaterad tabell av en data frame (`df`). Den kan
+sparas som PNG, eller returneras som `flextable`-objekt för rapporter och
+presentationer. Heltal visas utan decimaler och årskolumner utan
+tusentalsavgränsare.
+
+```{r, code = exempel("func_graf_tabell")}
+```
+
+`func_skapa_pptx()` samlar diagram och tabeller (`plot_list`) i en presentation som
+sparas i `output_path`. Den bygger på VGR:s mall, som följer med paketet, och varje
+objekt hamnar på en egen bild med listans namn som rubrik.
+
+```{r, code = exempel("func_skapa_pptx")}
+```
+
+## Uppslagstabeller
+
+`func_hamta_dim_region()` innehåller alla kommuner och län med regionindelningar,
+t.ex. SKR:s kommungrupper, kommunalförbund och FA-regioner. Tabellen kan filtreras
+på ett eller flera länsprefix, som text eller som tal (ensiffriga tal får en
+inledande nolla, `6` blir `"06"`), och kopplas till egna data med regionkoden.
+
+```{r, code = exempel("func_hamta_dim_region")}
+```
+
+`func_hamta_dim_sni07()` lägger till kortnamn, bokstavskod, sektor och
+huvudkategori för SNI 2007. Med `return_lookup_only = TRUE` returneras hela
+uppslagstabellen.
+
+```{r, code = exempel("func_hamta_dim_sni07")}
+```
+
+## SCB
+
+Tre funktioner håller koll på SCB:s tabeller och publiceringar:
+`func_scb_hamta_tabell_id()` ger tabell-id för ett äldre tabellnamn,
+`func_scb_hamta_uppdaterad()` när en tabell senast uppdaterades och
+`func_scb_publiceringskalender()` nästa publicering enligt SCB:s kalender. De kräver
+internet, så koden körs inte när vignetten byggs.
+
+```{r, eval = FALSE, code = exempel("func_scb_hamta_tabell_id")}
+```
+
+```{r, eval = FALSE, code = exempel("func_scb_hamta_uppdaterad")}
+```
+
+```{r, eval = FALSE, code = exempel("func_scb_publiceringskalender")}
+```
+
+## Röjandeskydd
+
+`func_censur_brus()` lägger slumpmässigt brus på små värden, t.ex. i enkätsvar eller
+små antal. Bara värden inom `target_range` (standard 1–4) ändras, och stegen och
+sannolikheterna styrs med `probs`. Med `seed` blir resultatet detsamma varje gång.
+
+```{r, code = exempel("func_censur_brus")}
+```
+
+## Filer och mappar
+
+`func_utskriftsmapp()` skapar en mapp för dagens utskrifter, som standard
+`<katalog>/<år>/<datum>`, och returnerar sökvägen.
+
+```{r, code = exempel("func_utskriftsmapp")}
+```
+
+`func_las_filtyper()` listar eller läser alla filer av en viss typ i en mapp, och
+`func_las_rskript()` kör alla R-skript i en mapp.
+
+```{r, code = exempel("func_las_filtyper")}
+```
+
+```{r, code = exempel("func_las_rskript")}
+```
+
+`func_setwd()` sätter arbetskatalogen till katalogen för skriptet som är öppet i
+RStudio. Den fungerar bara i RStudio och gör därför ingenting här.
+
+```{r, code = exempel("func_setwd")}
+```
+
+## Översikt över funktionerna
+
+| Funktion | Vad den gör | Obligatoriska parametrar |
+|---|---|---|
+| `func_graf_linjediagram()` | Linjediagram | `df`, `x_value`, `y_value` |
+| `func_graf_barchart()` | Stapeldiagram | `df`, `x_value`, `y_value` |
+| `func_graf_dumbbell()` | Dumbbell-diagram (före/efter) | `df`, `x_value`, `y_value`, `group` |
+| `func_graf_spridningsdiagram()`, `func_graf_scatterplot()` | Spridningsdiagram (punkter, bubblor, trendlinje) | `df`, `x_value`, `y_value` |
+| `func_graf_histogram()` | Histogram | `df`, `x_value` |
+| `func_fargtema()` | Färgpaletter i VGR:s grafiska profil | – |
+| `func_tema_vgr()` | ggplot2-tema i VGR:s stil | – |
+| `func_graf_karta()` | Koropletkarta med klassindelade värden | `df`, `basemap`, `geom_col`, samt `df_value` eller `group` |
+| `func_graf_karta_change()` | Karta över förändring mellan första och sista året | `df`, `df_value`, `basemap`, `geom_col` |
+| `func_graf_karta_heatmap()`, `graf_karta_heatmap()` | Heatmap (täthetskarta) över punktdata | `df`, `df_value`, `basemap` |
+| `func_graf_heatmap_coordinats()` | Enkel heatmap över punktkoordinater (äldre variant) | `df`, `df_varde`, `basemap` |
+| `func_gis_satt_inloggning()` | Behövs inte längre: inloggningen är inbyggd | – |
+| `func_gis_hamta_geoobjekt()` | Hämta geografiska objekt från VGR:s PostGIS-databas | – |
+| `func_gis_hamta_con()`, `func_gis_hamta_pgstring()` | Anslutning till VGR:s geodatabas (PostGIS) | – |
+| `func_graf_tabell()` | Formaterad tabell som bild eller flextable | `df` |
+| `func_skapa_pptx()` | Skapa en PowerPoint-presentation från en lista med diagram | `plot_list`, `output_path` |
+| `func_hamta_dim_region()` | Uppslagstabell över Sveriges kommuner och län | – |
+| `func_hamta_dim_sni07()` | Uppslag och förkortning av SNI 2007-kategorier | `df`, utom med `return_lookup_only = TRUE` |
+| `func_scb_hamta_tabell_id()` | Slå upp SCB:s tabell-id | `query` |
+| `func_scb_hamta_uppdaterad()` | Senaste uppdateringsdatum för en SCB-tabell | `table_id` |
+| `func_scb_publiceringskalender()`, `func_scb_publicering()` | Nästa publicering enligt SCB:s publiceringskalender | – |
+| `func_censur_brus()` | Lägg till diskret brus i valda kolumner (röjandeskydd) | `.data`, `cols` |
+| `func_utskriftsmapp()` | Skapa en datumstämplad utskriftsmapp | – |
+| `func_las_filtyper()` | Lista eller läs in alla filer av en viss typ i en katalog | `mappnamn`, `filtyp` |
+| `func_las_rskript()` | Kör (source) alla R-skript i en katalog | `mappnamn` |
+| `func_setwd()` | Sätt arbetskatalogen till det aktiva skriptets katalog | – |
+
+## Mer information
+
+Varje funktion har en hjälpsida med alla argument och körbara exempel, t.ex.
+`?func_graf_karta` eller `example(func_graf_barchart)`. `?funcVGR` ger en översikt
+över alla funktioner, och `news(package = "funcVGR")` visar vad som ändrats i varje
+version.
