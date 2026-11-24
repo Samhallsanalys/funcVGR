@@ -9,10 +9,18 @@ head(func_hamta_dim_region(gruppering = "region_namn", region_kod_prefix = c("12
 func_hamta_dim_region(gruppering = "region_namn", region_kod_prefix = c(14, 6),
                       hamta_lan = TRUE)
 
+# Kommunkoder har fyra siffror, så 114 blir "0114" (Upplands Väsby)
+func_hamta_dim_region(gruppering = "region_namn", region_kod_prefix = 114)
+
 # Bara namn och SKR-kommungrupp för kommuner, och antal kommuner per grupp
 kommuner <- func_hamta_dim_region(gruppering = c("region_namn", "skr_kommungrupp"),
                                   hamta_kommuner = TRUE)
 table(kommuner$skr_kommungrupp)
+
+# Lokala arbetsmarknader 2024 (SCB): vilken LA varje VG-kommun hör till, och antal kommuner per LA
+la <- func_hamta_dim_region(gruppering = c("region_namn", "la24_region", "la24_region_kod"),
+                            hamta_enbart_VGR = TRUE, hamta_kommuner = TRUE)
+table(la$la24_region)
 
 # Koppla tabellen till egna data med regionkoden
 mina_data <- data.frame(region_kod = c("1480", "1490", "1496"),

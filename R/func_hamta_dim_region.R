@@ -4,20 +4,32 @@
 #' regionindelningar. Tabellen kan filtreras, och kolumner kan väljas ut.
 #' SKR-kolumnerna följer SKR:s kommungruppsindelning 2023.
 #'
+#' `la24_region` och `la24_region_kod` är SCB:s lokala arbetsmarknader 2024 (LA24),
+#' en indelning av kommunerna efter pendlingen mellan dem, t.ex. `"Göteborg"` och
+#' `"LA2420"`. De finns bara för kommuner; för län och riket är de `NA`.
+#'
 #' Tillgängliga kolumner: `region_kod`, `region_namn`, `region_kod_namn`,
 #' `län_kod`, `län_namn`, `län_kod_namn`, `kommunalförbund`, `drn`,
 #' `skr_kommungrupp`, `skr_huvudgrupp`, `skr_gruppbeteckning`,
-#' `skr_kommungruppering`, `fa_region`, `fa_region_kod` och `kategori`
-#' (`"kommun"` eller `"lan"`).
+#' `skr_kommungruppering`, `fa_region`, `fa_region_kod`, `la24_region`,
+#' `la24_region_kod` och `kategori` (`"kommun"` eller `"lan"`).
 #'
 #' @param gruppering Kolumner som ska returneras (skiftlägesokänsligt).
 #'   `region_kod` tas alltid med. `"alla"` = alla kolumner.
 #' @param region_kod_prefix Behåll bara regionkoder som börjar med något av
 #'   dessa prefix. Ett värde, t.ex. `"14"` för Västra Götaland, eller en
 #'   vektor, t.ex. `c("12", "14")` för Skåne och Västra Götaland. Koderna kan
-#'   anges som text eller som tal. Ensiffriga tal får en inledande nolla, så
-#'   `6` blir `"06"` (Jönköpings län) och `c(14, 13, 6)` blir
-#'   `c("14", "13", "06")`. `NULL` = ingen filtrering.
+#'   anges som text eller som tal. Länskoder har två siffror och kommunkoder fyra,
+#'   och den inledande nollan läggs till där den fattas: ett ensiffrigt tal är ett
+#'   län (`6` blir `"06"`, Jönköpings län, och `c(14, 13, 6)` blir
+#'   `c("14", "13", "06")`), och ett prefix med en eller tre siffror som inte matchar
+#'   någon kod får en nolla om det då matchar (`"6"` blir `"06"`, `114` och `"114"`
+#'   blir `"0114"`, Upplands Väsby). Två siffror är alltid en hel länskod och ändras
+#'   inte (`"11"` ger inga rader). Ett prefix som matchar behåller sin betydelse:
+#'   `"148"` ger kommunerna 1480–1489 och `"1"` alla koder som börjar med 1. Ange
+#'   därför kommunkoder som text med nollan: talet `181` (Södertälje) matchar 1814
+#'   Lekeberg och ändras inte. `NA` ignoreras; bara `NA` ger ett fel, och en tom
+#'   vektor ger inga rader. `NULL` = ingen filtrering.
 #' @param hamta_enbart_VGR `TRUE` behåller bara Västra Götalands län (`"14"`)
 #'   och dess kommuner.
 #' @param hamta_riket `TRUE` lägger till riket (`"00"`) om det saknas efter
@@ -27,12 +39,13 @@
 #' @param hamta_kommuner `TRUE` behåller bara kommuner.
 #' @param hamta_lan `TRUE` behåller bara län (och riket).
 #'
-#' @return En tibble.
+#' @return En tibble med en rad per region (kommun, län och riket) efter
+#'   filtreringen, och de valda kolumnerna. `region_kod` är alltid med.
 #' @export
 #'
 #' @example inst/examples/func_hamta_dim_region.R
 func_hamta_dim_region <- function(gruppering = "alla", 
-                                  region_kod_prefix = NULL, #Filter region_kod based on prefix. 14 = return all region_kod that starts with 14. Several allowed: c(14, 13, 6) (single digits padded, 6 -> "06")
+                                  region_kod_prefix = NULL, #Filter region_kod based on prefix. 14 = return all region_kod that starts with 14. Several allowed: c(14, 13, 6) (a missing leading zero is added: 6 -> "06", 114 -> "0114")
                                   hamta_enbart_VGR = FALSE, 
                                   hamta_riket = FALSE,
                                   hamta_kba = FALSE,
@@ -110,7 +123,7 @@ func_hamta_dim_region <- function(gruppering = "alla",
       "21", "21", "21", "21", "21", "21", "22", "22", "22", "22", "22", "22", "22", "23", "23", "23", "23", "23", "23", "23",
       "23", "24", "24", "24", "24", "24", "24", "24", "24", "24", "24", "24", "24", "24", "24", "24", "25", "25", "25", "25",
       "25", "25", "25", "25", "25", "25", "25", "25", "25", "25", "01", "03", "04", "05", "06", "07", "08", "09", "10", "12",
-      "13", "14", "17", "18", "19", "20", "21", "22", "23", "24", "25", "0"
+      "13", "14", "17", "18", "19", "20", "21", "22", "23", "24", "25", "00"
     ),
     län_namn = c(
       "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län", "Stockholms län",
@@ -276,7 +289,7 @@ func_hamta_dim_region <- function(gruppering = "alla",
     ),
     fa_region_kod = c(
       "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "0481", "01", "01", 
-      "01", "01", "01", "01", "01", "01", "01", "21", "03", "19", "21", "03", "19", "382", "483", "0481", "0481", "0481", "0484", "483", 
+      "01", "01", "01", "01", "01", "01", "01", "21", "03", "19", "21", "03", "19", "0382", "0483", "0481", "0481", "0481", "0484", "0483", 
       "0484", "0484", "0481", "05", "06", "05", "05", "05", "05", "0883", "05", "0581", "0581", "05", "05", "05", "06", "0683", "06", "06", 
       "0683", "06", "06", "06", "0683", "0685", "0685", "06", "0687", "07", "07", "07", "07", "0765", "0781", "07", "0781", "08", "08", "08", 
       "0883", "08", "08", "08", "08", "0882", "0883", "0883", "08", "09", "10", "10", "10", "10", "1290", "12", "12", "12", "12", "1290", 
@@ -291,6 +304,42 @@ func_hamta_dim_region <- function(gruppering = "alla",
       "23", "24", "2481", "24", "24", "2482", "2481", "2421", "2421", "2481", "24", "2481", "2481", "24", "2481", "2482", "2505", "2506", "2510", "2513", 
       "2580", "2513", "2523", "2523", "2580", "2580", "2580", "2580", "2583", "2523", "01", "03", "0481", "05", "06", "07", "08", "09", "10", "12", 
       "13", "14", "17", "18", "19", "20", "21", "2281", "23", "24", "2580", "00"
+    ),
+    la24_region = c(
+      "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna",
+      "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Gävle", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Stockholm-Solna", "Eskilstuna", "Stockholm-Solna", "Nyköping-Oxelösund", "Nyköping-Oxelösund", "Eskilstuna", "Eskilstuna",
+      "Eskilstuna", "Stockholm-Solna", "Stockholm-Solna", "Linköping", "Jönköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Linköping", "Jönköping", "Värnamo-Gislaved", "Jönköping", "Jönköping",
+      "Värnamo-Gislaved", "Jönköping", "Jönköping", "Jönköping", "Värnamo-Gislaved", "Jönköping", "Jönköping", "Jönköping", "Jönköping", "Växjö", "Växjö", "Växjö", "Växjö", "Växjö", "Ljungby", "Växjö", "Ljungby", "Oskarshamn", "Kalmar", "Kalmar",
+      "Vimmerby-Hultsfred", "Oskarshamn", "Kalmar", "Kalmar", "Kalmar", "Oskarshamn", "Västervik", "Vimmerby-Hultsfred", "Kalmar", "Gotland", "Karlshamn-Olofström", "Karlskrona", "Karlskrona", "Karlshamn-Olofström", "Kristianstad-Hässleholm", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Kristianstad-Hässleholm",
+      "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Kristianstad-Hässleholm", "Växjö", "Kristianstad-Hässleholm", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund",
+      "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Malmö-Lund", "Kristianstad-Hässleholm", "Malmö-Lund", "Malmö-Lund", "Kristianstad-Hässleholm", "Halmstad", "Halmstad", "Halmstad", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg",
+      "Göteborg", "Göteborg", "Strömstad", "Bengtsfors-Dals-Ed", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Lidköping-Götene", "Skövde-Skara", "Skövde-Skara", "Göteborg", "Bengtsfors-Dals-Ed", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg",
+      "Lidköping-Götene", "Lidköping-Götene", "Skövde-Skara", "Skövde-Skara", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Strömstad", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Göteborg", "Säffle-Åmål", "Skövde-Skara", "Lidköping-Götene", "Skövde-Skara", "Skövde-Skara",
+      "Skövde-Skara", "Skövde-Skara", "Skövde-Skara", "Karlstad", "Arvika", "Torsby", "Örebro", "Karlstad", "Karlstad", "Karlstad", "Karlstad", "Årjäng", "Torsby", "Karlstad", "Karlstad", "Karlstad", "Hagfors", "Arvika", "Säffle-Åmål", "Örebro",
+      "Örebro", "Örebro", "Örebro", "Hällefors", "Ludvika", "Örebro", "Örebro", "Örebro", "Örebro", "Örebro", "Örebro", "Västerås", "Västerås", "Västerås", "Västerås", "Västerås", "Västerås", "Västerås", "Västerås", "Västerås",
+      "Västerås", "Vansbro", "Malung-Sälen", "Falun-Borlänge", "Falun-Borlänge", "Falun-Borlänge", "Mora", "Mora", "Ludvika", "Mora", "Falun-Borlänge", "Falun-Borlänge", "Falun-Borlänge", "Avesta-Hedemora", "Avesta-Hedemora", "Ludvika", "Gävle", "Gävle", "Bollnäs-Ovanåker", "Hudiksvall",
+      "Ljusdal", "Gävle", "Gävle", "Söderhamn", "Bollnäs-Ovanåker", "Hudiksvall", "Sundsvall", "Sundsvall", "Sundsvall", "Sundsvall", "Kramfors", "Sollefteå", "Örnsköldsvik", "Östersund", "Östersund", "Östersund", "Strömsund", "Östersund", "Östersund", "Härjedalen",
+      "Östersund", "Umeå", "Umeå", "Umeå", "Umeå", "Skellefteå", "Lycksele", "Storuman", "Arjeplog", "Dorotea", "Umeå", "Vilhelmina", "Åsele", "Umeå", "Lycksele", "Skellefteå", "Arvidsjaur", "Arjeplog", "Gällivare", "Överkalix",
+      "Luleå", "Övertorneå", "Pajala", "Gällivare", "Luleå", "Luleå", "Luleå", "Luleå", "Haparanda", "Kiruna", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,
+      NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+    ),
+    la24_region_kod = c(
+      "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401",
+      "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2440", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2401", "LA2403", "LA2401", "LA2402", "LA2402", "LA2403", "LA2403",
+      "LA2403", "LA2401", "LA2401", "LA2404", "LA2405", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2404", "LA2405", "LA2406", "LA2405", "LA2405",
+      "LA2406", "LA2405", "LA2405", "LA2405", "LA2406", "LA2405", "LA2405", "LA2405", "LA2405", "LA2407", "LA2407", "LA2407", "LA2407", "LA2407", "LA2408", "LA2407", "LA2408", "LA2410", "LA2409", "LA2409",
+      "LA2412", "LA2410", "LA2409", "LA2409", "LA2409", "LA2410", "LA2411", "LA2412", "LA2409", "LA2413", "LA2415", "LA2414", "LA2414", "LA2415", "LA2417", "LA2416", "LA2416", "LA2416", "LA2416", "LA2417",
+      "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2417", "LA2407", "LA2417", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416", "LA2416",
+      "LA2416", "LA2416", "LA2416", "LA2416", "LA2417", "LA2416", "LA2416", "LA2417", "LA2418", "LA2418", "LA2418", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420",
+      "LA2420", "LA2420", "LA2421", "LA2419", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2422", "LA2423", "LA2423", "LA2420", "LA2419", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420",
+      "LA2422", "LA2422", "LA2423", "LA2423", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2421", "LA2420", "LA2420", "LA2420", "LA2420", "LA2420", "LA2429", "LA2423", "LA2422", "LA2423", "LA2423",
+      "LA2423", "LA2423", "LA2423", "LA2426", "LA2428", "LA2424", "LA2431", "LA2426", "LA2426", "LA2426", "LA2426", "LA2425", "LA2424", "LA2426", "LA2426", "LA2426", "LA2427", "LA2428", "LA2429", "LA2431",
+      "LA2431", "LA2431", "LA2431", "LA2430", "LA2438", "LA2431", "LA2431", "LA2431", "LA2431", "LA2431", "LA2431", "LA2432", "LA2432", "LA2432", "LA2432", "LA2432", "LA2432", "LA2432", "LA2432", "LA2432",
+      "LA2432", "LA2433", "LA2434", "LA2436", "LA2436", "LA2436", "LA2435", "LA2435", "LA2438", "LA2435", "LA2436", "LA2436", "LA2436", "LA2437", "LA2437", "LA2438", "LA2440", "LA2440", "LA2442", "LA2443",
+      "LA2439", "LA2440", "LA2440", "LA2441", "LA2442", "LA2443", "LA2444", "LA2444", "LA2444", "LA2444", "LA2445", "LA2446", "LA2447", "LA2450", "LA2450", "LA2450", "LA2448", "LA2450", "LA2450", "LA2449",
+      "LA2450", "LA2455", "LA2455", "LA2455", "LA2455", "LA2457", "LA2456", "LA2451", "LA2459", "LA2452", "LA2455", "LA2453", "LA2454", "LA2455", "LA2456", "LA2457", "LA2458", "LA2459", "LA2463", "LA2460",
+      "LA2464", "LA2461", "LA2462", "LA2463", "LA2464", "LA2464", "LA2464", "LA2464", "LA2465", "LA2466", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,
+      NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
     )
   ) |> 
     mutate(kategori = ifelse(nchar(region_kod) == 4, "kommun", "lan"))
@@ -326,15 +375,31 @@ func_hamta_dim_region <- function(gruppering = "alla",
 
   # Filter by region_kod prefix if specified
   if (!is.null(region_kod_prefix)) {
-    # Numeric input loses its leading zero (6 -> "6"), so pad single digits to "06"
-    if (is.numeric(region_kod_prefix)) {
-      region_kod_prefix <- ifelse(nchar(region_kod_prefix) == 1,
-                                  sprintf("%02d", as.integer(region_kod_prefix)),
-                                  as.character(region_kod_prefix))
-    }
-    # One or more prefixes, e.g. c("12", "14"): keep codes that start with ANY of them.
+    # Codes are 2 digits (län, riket) or 4 digits (kommun), and a leading zero is easily lost:
+    # a number cannot keep it (6, 114) and text is often typed without it ("6").
+    # - A one-digit number is a län, as before: 6 -> "06".
+    # - A one- or three-character prefix that matches no code is tried with a leading "0"
+    #   ("6" -> "06", 114 -> "0114"). Two characters are already a whole län code and are
+    #   never padded ("11" must not become "011"). A prefix that already matches keeps its
+    #   meaning ("1" = all codes starting with 1, "148" = 1480-1489).
     # startsWith() matches literally (no regex), so prefixes need no escaping.
-    prefixes <- unique(as.character(region_kod_prefix))
+    # NA matches nothing (and would give rows of NA): it is ignored. An empty vector gives
+    # no rows, as before.
+    prefixes <- as.character(region_kod_prefix)
+    prefixes <- prefixes[!is.na(prefixes)]
+    if (!length(prefixes) && length(region_kod_prefix)) {
+      stop("region_kod_prefix must have at least one value that is not NA")
+    }
+    if (is.numeric(region_kod_prefix)) {
+      ett_tal <- nchar(prefixes) == 1
+      prefixes[ett_tal] <- paste0("0", prefixes[ett_tal])
+    }
+    finns <- function(p) any(startsWith(dim_region$region_kod, p))
+    utan_traff <- nchar(prefixes) %in% c(1, 3) &
+      !vapply(prefixes, finns, logical(1)) & vapply(paste0("0", prefixes), finns, logical(1))
+    prefixes[utan_traff] <- paste0("0", prefixes[utan_traff])
+    # One or more prefixes, e.g. c("12", "14"): keep codes that start with ANY of them.
+    prefixes <- unique(prefixes)
     matchar <- Reduce(`|`, lapply(prefixes, function(p) startsWith(dim_region$region_kod, p)))
     dim_region <- dim_region[matchar, , drop = FALSE]
 

@@ -21,9 +21,17 @@ func_hamta_dim_region(
 \item{region_kod_prefix}{Behåll bara regionkoder som börjar med något av
 dessa prefix. Ett värde, t.ex. \code{"14"} för Västra Götaland, eller en
 vektor, t.ex. \code{c("12", "14")} för Skåne och Västra Götaland. Koderna kan
-anges som text eller som tal. Ensiffriga tal får en inledande nolla, så
-\code{6} blir \code{"06"} (Jönköpings län) och \code{c(14, 13, 6)} blir
-\code{c("14", "13", "06")}. \code{NULL} = ingen filtrering.}
+anges som text eller som tal. Länskoder har två siffror och kommunkoder fyra,
+och den inledande nollan läggs till där den fattas: ett ensiffrigt tal är ett
+län (\code{6} blir \code{"06"}, Jönköpings län, och \code{c(14, 13, 6)} blir
+\code{c("14", "13", "06")}), och ett prefix med en eller tre siffror som inte matchar
+någon kod får en nolla om det då matchar (\code{"6"} blir \code{"06"}, \code{114} och \code{"114"}
+blir \code{"0114"}, Upplands Väsby). Två siffror är alltid en hel länskod och ändras
+inte (\code{"11"} ger inga rader). Ett prefix som matchar behåller sin betydelse:
+\code{"148"} ger kommunerna 1480–1489 och \code{"1"} alla koder som börjar med 1. Ange
+därför kommunkoder som text med nollan: talet \code{181} (Södertälje) matchar 1814
+Lekeberg och ändras inte. \code{NA} ignoreras; bara \code{NA} ger ett fel, och en tom
+vektor ger inga rader. \code{NULL} = ingen filtrering.}
 
 \item{hamta_enbart_VGR}{\code{TRUE} behåller bara Västra Götalands län (\code{"14"})
 och dess kommuner.}
@@ -39,7 +47,8 @@ efter filtreringen.}
 \item{hamta_lan}{\code{TRUE} behåller bara län (och riket).}
 }
 \value{
-En tibble.
+En tibble med en rad per region (kommun, län och riket) efter
+filtreringen, och de valda kolumnerna. \code{region_kod} är alltid med.
 }
 \description{
 Returnerar en tabell med alla kommuner, län och riket samt olika
@@ -47,11 +56,15 @@ regionindelningar. Tabellen kan filtreras, och kolumner kan väljas ut.
 SKR-kolumnerna följer SKR:s kommungruppsindelning 2023.
 }
 \details{
+\code{la24_region} och \code{la24_region_kod} är SCB:s lokala arbetsmarknader 2024 (LA24),
+en indelning av kommunerna efter pendlingen mellan dem, t.ex. \code{"Göteborg"} och
+\code{"LA2420"}. De finns bara för kommuner; för län och riket är de \code{NA}.
+
 Tillgängliga kolumner: \code{region_kod}, \code{region_namn}, \code{region_kod_namn},
 \code{län_kod}, \code{län_namn}, \code{län_kod_namn}, \code{kommunalförbund}, \code{drn},
 \code{skr_kommungrupp}, \code{skr_huvudgrupp}, \code{skr_gruppbeteckning},
-\code{skr_kommungruppering}, \code{fa_region}, \code{fa_region_kod} och \code{kategori}
-(\code{"kommun"} eller \code{"lan"}).
+\code{skr_kommungruppering}, \code{fa_region}, \code{fa_region_kod}, \code{la24_region},
+\code{la24_region_kod} och \code{kategori} (\code{"kommun"} eller \code{"lan"}).
 }
 \examples{
 # Alla kolumner för VGR:s kommuner och länet, plus riket
@@ -65,10 +78,18 @@ head(func_hamta_dim_region(gruppering = "region_namn", region_kod_prefix = c("12
 func_hamta_dim_region(gruppering = "region_namn", region_kod_prefix = c(14, 6),
                       hamta_lan = TRUE)
 
+# Kommunkoder har fyra siffror, så 114 blir "0114" (Upplands Väsby)
+func_hamta_dim_region(gruppering = "region_namn", region_kod_prefix = 114)
+
 # Bara namn och SKR-kommungrupp för kommuner, och antal kommuner per grupp
 kommuner <- func_hamta_dim_region(gruppering = c("region_namn", "skr_kommungrupp"),
                                   hamta_kommuner = TRUE)
 table(kommuner$skr_kommungrupp)
+
+# Lokala arbetsmarknader 2024 (SCB): vilken LA varje VG-kommun hör till, och antal kommuner per LA
+la <- func_hamta_dim_region(gruppering = c("region_namn", "la24_region", "la24_region_kod"),
+                            hamta_enbart_VGR = TRUE, hamta_kommuner = TRUE)
+table(la$la24_region)
 
 # Koppla tabellen till egna data med regionkoden
 mina_data <- data.frame(region_kod = c("1480", "1490", "1496"),

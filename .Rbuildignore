@@ -3,3 +3,4 @@
 ^CLAUDE\.md$
 ^data-raw$
 ^\.claude$
+^tests/regression$

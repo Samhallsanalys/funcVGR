@@ -1,7 +1,8 @@
 # Kolumnnamn som används med icke-standardiserad evaluering (dplyr/ggplot2).
 # Deklareras här så att R CMD check inte rapporterar dem som odefinierade.
 utils::globalVariables(c(
-  ".", ".bin", ".count", ".end_neg", ".end_pos", ".gg_flag", ".hi", ".hjust", ".label_just", ".lo", ".mid",
+  ".", ".bin", ".box_i", ".count", ".end_neg", ".end_pos", ".gg_flag", ".hi", ".hjust", ".label_just", ".label_x",
+  ".lo", ".lower", ".mean", ".median", ".mid", ".pos", ".q1", ".q3", ".reach", ".upper",
   ".ref_end", ".trend_id", ".vp", ".x", ".xmax", ".xmin", ".y",
   "Kommunnamn", "arrow_clearance", "arrow_step", "auto_nudge",
   "base_val", "base_value",

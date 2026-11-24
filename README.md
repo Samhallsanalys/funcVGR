@@ -232,6 +232,22 @@ func_graf_histogram(personer, x_value = "alder", group = "kon", bin_width = 5,
                     bar_type = "overlay", histogram_y = "percent")
 ```
 
+### Lådagram
+
+```r
+inkomst <- data.frame(region  = rep(c("Göteborgsregionen", "Sjuhärad", "Fyrbodal"), each = 200),
+                      kon     = sample(c("Kvinnor", "Män"), 600, replace = TRUE),
+                      inkomst = round(rlnorm(600, log(300), 0.3)))
+
+# En låda per delregion, sorterade efter medianen, med medelvärde och medianetikett
+func_graf_ladagram(inkomst, x_value = "region", y_value = "inkomst",
+                   sort_by = "value_desc", box_mean = TRUE, data_labels = TRUE)
+
+# Kvinnor och män bredvid varandra, liggande lådor
+func_graf_ladagram(inkomst, x_value = "region", y_value = "inkomst", group = "kon",
+                   horizontal = TRUE)
+```
+
 ### Färger och tema
 
 ```r
@@ -387,14 +403,19 @@ func_hamta_dim_region(gruppering = c("region_namn", "län_namn"),
 func_hamta_dim_region(gruppering = "region_namn",
                       region_kod_prefix = c("13", "14"), hamta_kommuner = TRUE)
 
+# SCB:s lokala arbetsmarknader 2024 för VG-kommunerna
+func_hamta_dim_region(gruppering = c("region_namn", "la24_region", "la24_region_kod"),
+                      hamta_enbart_VGR = TRUE, hamta_kommuner = TRUE)
+
 # Kortnamn och bokstavskod för SNI 2007
 bransch <- data.frame(sni = c("Tillverkning", "Vård och omsorg; sociala tjänster"))
 func_hamta_dim_sni07(bransch, sni_column_name = "sni", add_key = TRUE)
 ```
 
-Länskoderna kan anges som text eller som tal. Ensiffriga tal får en inledande
-nolla, så `region_kod_prefix = c(14, 6)` ger Västra Götaland och Jönköpings län
-(`"06"`).
+Koderna kan anges som text eller som tal. Länskoder har två siffror och kommunkoder
+fyra, och en inledande nolla läggs till där den fattas: `region_kod_prefix = c(14, 6)`
+ger Västra Götaland och Jönköpings län (`"06"`), och `114` ger Upplands Väsby (`"0114"`).
+Ett prefix som matchar behåller sin betydelse, så `"148"` ger kommunerna 1480–1489.
 
 ### SCB
 
@@ -501,6 +522,46 @@ Ta bort `source()`-anropen till `func_vgr` (t.ex. `func_all.R`) och lägg till
 ## Versionshistorik
 
 Samma historik finns i NEWS.md och visas i R med `news(package = "funcVGR")`.
+
+### 0.5.0 (2026-11-17)
+
+#### Nytt
+
+* `func_graf_ladagram()` (även under namnet `func_graf_boxplot()`): nytt lådagram,
+  fördelningen av ett numeriskt värde per kategori. Lådan går från första till tredje
+  kvartilen med medianen som ett streck, och morrhåren når de mest extrema värdena inom
+  `box_whisker_range` kvartilavstånd (1,5 som standard); värden utanför ritas som punkter.
+  * `group` ritar en låda per grupp bredvid varandra. Varje grupp har en fast plats i
+    varje kategori, och en saknad grupp blir en egen grå "NA"-grupp.
+  * `horizontal = TRUE` ger liggande lådor, och `sort_by` sorterar kategorierna efter
+    medianen eller namnet.
+  * `box_mean` visar medelvärdet som en romb, `point_show` ritar alla värden som punkter
+    spridda i sidled, och `data_labels` skriver medianen bredvid lådan.
+  * `y_break_line` kan vara ett eller flera tal, eller `"mean"` och `"median"`.
+  * Statistiken räknas fram i funktionen med samma metod som ggplot2:s `geom_boxplot()`,
+    så att `func_d3_ladagram()` i funcVGRD3 får exakt samma lådor.
+* `func_hamta_dim_region()`: två nya kolumner med SCB:s lokala arbetsmarknader 2024,
+  `la24_region` (t.ex. `"Göteborg"`) och `la24_region_kod` (t.ex. `"LA2420"`). De finns
+  för alla 290 kommuner; för län och riket är de `NA`. Kolumnerna följer med när alla
+  kolumner hämtas (`gruppering = "alla"`, standard), så tabellen har nu 17 kolumner i
+  stället för 15.
+
+#### Ändrat
+
+* `func_hamta_dim_region()`: `region_kod_prefix` lägger till den inledande nollan även för
+  text och för tresiffriga koder, när prefixet annars inte matchar någon kod. Länskoder har
+  två siffror och kommunkoder fyra, så `"6"` och `6` blir `"06"` och `114` eller `"114"` blir
+  `"0114"`. Tidigare gav text som `"6"` och tal som `114` inga rader alls. Ett prefix som
+  matchar behåller sin betydelse: `"148"` ger fortfarande kommunerna 1480–1489. Två siffror är
+  alltid en hel länskod och ändras inte (`"11"` ger inga rader).
+
+#### Rättat
+
+* `func_hamta_dim_region()`: `fa_region_kod` var `"382"` och `"483"` i stället för `"0382"` och
+  `"0483"` för Östhammar, Vingåker och Katrineholm, så de föll bort vid koppling på koden.
+* `func_hamta_dim_region()`: riket har `län_kod` `"00"` (tidigare `"0"`), samma som `region_kod`.
+* `func_hamta_dim_region()`: `NA` i `region_kod_prefix` ignoreras. Tidigare gav det rader där alla
+  kolumner var `NA`. Bara `NA` ger ett fel.
 
 ### 0.4.0 (2026-11-12)
 

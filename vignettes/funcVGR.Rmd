@@ -124,6 +124,21 @@ funcVGRD3 får samma intervall.
 ```{r, code = exempel("func_graf_histogram")}
 ```
 
+### Lådagram
+
+`func_graf_ladagram()` (eller `func_graf_boxplot()`) visar fördelningen av ett numeriskt
+värde per kategori: lådan går från första till tredje kvartilen med medianen som ett
+streck, morrhåren når de mest extrema värdena inom `box_whisker_range` kvartilavstånd
+(1,5 som standard), och värden utanför ritas som punkter. Obligatoriska parametrar är
+`df` och `y_value`; utan `x_value` blir det en låda för alla värden. Med `group` står en
+låda per grupp bredvid varandra, `horizontal = TRUE` lägger lådorna ned och `sort_by`
+sorterar kategorierna efter medianen eller namnet. `box_mean` visar medelvärdet,
+`point_show` alla enskilda värden och `data_labels` medianen. Statistiken räknas fram i
+funktionen, så att `func_d3_ladagram()` i funcVGRD3 får exakt samma lådor.
+
+```{r, code = exempel("func_graf_ladagram")}
+```
+
 ### Färger och tema
 
 `func_fargtema()` ger VGR:s färgpaletter och `func_tema_vgr()` ett ggplot2-tema för
@@ -230,9 +245,11 @@ objekt hamnar på en egen bild med listans namn som rubrik.
 ## Uppslagstabeller
 
 `func_hamta_dim_region()` innehåller alla kommuner och län med regionindelningar,
-t.ex. SKR:s kommungrupper, kommunalförbund och FA-regioner. Tabellen kan filtreras
-på ett eller flera länsprefix, som text eller som tal (ensiffriga tal får en
-inledande nolla, `6` blir `"06"`), och kopplas till egna data med regionkoden.
+t.ex. SKR:s kommungrupper, kommunalförbund, FA-regioner och SCB:s lokala
+arbetsmarknader 2024 (`la24_region`, `la24_region_kod`). Tabellen kan filtreras
+på ett eller flera prefix, som text eller som tal (en inledande nolla läggs till där
+den fattas, `6` blir `"06"` och `114` blir `"0114"`), och kopplas till egna data
+med regionkoden.
 
 ```{r, code = exempel("func_hamta_dim_region")}
 ```
@@ -302,6 +319,7 @@ RStudio. Den fungerar bara i RStudio och gör därför ingenting här.
 | `func_graf_dumbbell()` | Dumbbell-diagram (före/efter) | `df`, `x_value`, `y_value`, `group` |
 | `func_graf_spridningsdiagram()`, `func_graf_scatterplot()` | Spridningsdiagram (punkter, bubblor, trendlinje) | `df`, `x_value`, `y_value` |
 | `func_graf_histogram()` | Histogram | `df`, `x_value` |
+| `func_graf_ladagram()`, `func_graf_boxplot()` | Lådagram | `df`, `y_value` |
 | `func_fargtema()` | Färgpaletter i VGR:s grafiska profil | – |
 | `func_tema_vgr()` | ggplot2-tema i VGR:s stil | – |
 | `func_graf_karta()` | Koropletkarta med klassindelade värden | `df`, `basemap`, `geom_col`, samt `df_value` eller `group` |
